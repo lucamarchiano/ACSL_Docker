@@ -1,0 +1,13 @@
+services:
+  pychrono_simulator:
+    build: .
+    container_name: pychrono_simualtor
+    hostname: lucam
+    tty: true
+    stdin_open: true
+    environment:
+      # Forward X11 display to container
+      - DISPLAY=${DISPLAY}
+    volumes:
+      # Mount X11 socket for GUI applications
+      - /tmp/.X11-unix:/tmp/.X11-unix
