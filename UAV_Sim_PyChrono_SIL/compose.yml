@@ -1,8 +1,9 @@
 services:
   pychrono_simulator:
     build: .
-    container_name: pychrono_simualtor
-    hostname: lucam
+    image: lucamarchiano/pychrono_simulator:1.0
+    container_name: pychrono_simulator
+    hostname: pychrono_simulator
     tty: true
     stdin_open: true
     environment:
