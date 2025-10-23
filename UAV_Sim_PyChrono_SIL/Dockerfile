@@ -105,7 +105,9 @@ RUN ldconfig
 
 RUN useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
-    adduser user sudo 
+    adduser user sudo && \
+    echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
+    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc
 WORKDIR /home/user
 USER user
 CMD ["bash", "-l"]
