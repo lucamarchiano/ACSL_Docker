@@ -23,8 +23,8 @@ RUN python -m pip install --no-cache-dir \
       pytz \
       scipy
 
-SHELL ["/bin/bash", "-lc"]
-RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+# Ensures all following RUN commands will be executed in a bash shell and not sh
+SHELL ["/bin/bash", "-c"]
 
 
 # Stage 2: Install CMake 3.26 from Kitware APT repo
@@ -51,6 +51,8 @@ RUN git clone --recursive --branch boost-1.86.0 https://github.com/boostorg/boos
     ldconfig && \
     rm -rf /boost
 
+RUN ldconfig
+
 
 # Stage 4: Build chrono_ros_interfaces package
 FROM base AS chrono-ros-builder
@@ -65,21 +67,36 @@ RUN mkdir -p src && \
 # Stage 5: Build PyChrono (Chrono 9.0.1) from source, sourcing chrono_ros_interfaces first
 FROM base AS chrono-builder
 
+# Copy CMake binaries and data from cmake-builder
+COPY --from=cmake-builder /usr/bin/cmake /usr/bin/cmake
+COPY --from=cmake-builder /usr/share/cmake-3.26 /usr/share/cmake-3.26
+
+# Copy Boost installation from boost-builder (includes headers (/include) and libs (/lib))
+COPY --from=boost-builder /usr/local/include /usr/local/include
+COPY --from=boost-builder /usr/local/lib /usr/local/lib
+
 # Copy chrono_ros_interfaces install space for sourcing setup
-COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/install /root/chrono_ros_interfaces_build/install
+COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/ /root/chrono_ros_interfaces_build/
+
+RUN ldconfig
 
 WORKDIR /root/chrono_build
-RUN git clone https://github.com/projectchrono/chrono . && mkdir -p build
 
-WORKDIR /root/chrono_build/build
-RUN /bin/bash -c "source /root/chrono_ros_interfaces_build/install/setup.bash && \
-    cmake -DENABLE_MODULE_IRRLICHT=ON \
-          -DENABLE_MODULE_PYTHON=ON \
-          -DENABLE_MODULE_ROS=ON \
+# Ensure Python modules from build folder are discoverable
+ENV PYTHONPATH=/root/chrono_build/build/bin:$PYTHONPATH
+
+RUN git clone https://github.com/projectchrono/chrono . && \
+    mkdir -p build && \
+    cd build && \
+    source /opt/ros/humble/setup.bash && \
+    source /root/chrono_ros_interfaces_build/install/local_setup.bash && \
+    cmake -DCH_ENABLE_MODULE_IRRLICHT=ON \
+          -DCH_ENABLE_MODULE_PYTHON=ON \
+          -DCH_ENABLE_MODULE_ROS=ON \
           -DCMAKE_BUILD_TYPE=Release .. && \
-    make -j$(nproc) && \
+    make -j"$(nproc)" && \
     make install && \
-    ldconfig"
+    ldconfig 
 
 
 # Stage 6: Final runtime image, copy built artifacts
@@ -90,10 +107,11 @@ COPY --from=cmake-builder /usr/bin/cmake /usr/bin/cmake
 COPY --from=cmake-builder /usr/share/cmake-3.26 /usr/share/cmake-3.26
 
 # Copy Boost libraries from boost-builder stage
-COPY --from=boost-builder /usr/local /usr/local
+COPY --from=boost-builder /usr/local/include /usr/local/include
+COPY --from=boost-builder /usr/local/lib /usr/local/lib
 
 # Copy chrono_ros_interfaces install from chrono-ros-builder stage
-COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/install /root/chrono_ros_interfaces_build/install
+COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/ /opt/chrono_ros_interfaces_build/
 
 # Copy PyChrono install files from chrono-builder stage (assumed install location in /usr/local)
 COPY --from=chrono-builder /usr/local /usr/local
@@ -107,7 +125,8 @@ RUN useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
     adduser user sudo && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
-    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc
+    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
+    echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc
 WORKDIR /home/user
 USER user
 CMD ["bash", "-l"]

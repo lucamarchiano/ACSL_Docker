@@ -12,3 +12,5 @@ services:
     volumes:
       # Mount X11 socket for GUI applications
       - /tmp/.X11-unix:/tmp/.X11-unix
+      # Mount PyChrono folder (/host/path:/container/path)
+      - $HOME/GitHub/UAV_Sim_PyChrono_SIL:/home/user/UAV_Sim_PyChrono_SIL
