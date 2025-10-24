@@ -61,7 +61,7 @@ WORKDIR /root/chrono_ros_interfaces_build
 RUN mkdir -p src && \
     git clone https://github.com/projectchrono/chrono_ros_interfaces src/chrono_ros_interfaces && \
     source /opt/ros/humble/setup.bash && \
-    colcon build --symlink-install
+    colcon build
 
 
 # Stage 5: Build PyChrono (Chrono 9.0.1) from source, sourcing chrono_ros_interfaces first
