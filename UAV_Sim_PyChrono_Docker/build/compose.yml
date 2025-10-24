@@ -1,9 +1,9 @@
 services:
-  pychrono_simulator:
+  uav_sim_pychrono:
     build: .
-    image: lucamarchiano/pychrono_simulator:1.0
-    container_name: pychrono_simulator
-    hostname: pychrono_simulator
+    image: ghcr.io/lucamarchiano/uav_sim_pychrono:1.0
+    container_name: uav_sim_pychrono
+    hostname: uav_sim_pychrono
     tty: true
     stdin_open: true
     environment:
@@ -13,4 +13,4 @@ services:
       # Mount X11 socket for GUI applications
       - /tmp/.X11-unix:/tmp/.X11-unix
       # Mount PyChrono folder (/host/path:/container/path)
-      - $HOME/GitHub/UAV_Sim_PyChrono_SIL:/home/user/UAV_Sim_PyChrono_SIL
+      - $HOME/DockerSharedFolder:/home/user/DockerSharedFolder

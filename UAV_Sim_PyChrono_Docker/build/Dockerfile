@@ -130,6 +130,7 @@ RUN useradd -ms /bin/bash user && \
 WORKDIR /home/user
 USER user
 CMD ["bash", "-l"]
+LABEL org.opencontainers.image.source https://github.com/lucamarchiano/ACSL_Docker
 
 
 
