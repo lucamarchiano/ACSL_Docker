@@ -127,17 +127,8 @@ RUN useradd -ms /bin/bash user && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
     echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc
-WORKDIR /home/user
+
 USER user
+WORKDIR /home/user
 CMD ["bash", "-l"]
 LABEL org.opencontainers.image.source https://github.com/lucamarchiano/ACSL_Docker
-
-
-
-
-
-
-
-
-
-
