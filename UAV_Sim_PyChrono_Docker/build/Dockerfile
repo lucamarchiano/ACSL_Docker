@@ -14,6 +14,7 @@ RUN ln -sf "$(which python3)" /usr/local/bin/python && \
       python3-pip \
       libbz2-dev \
       wget \
+      gdb \
       nano && \
     rm -rf /var/lib/apt/lists/*
 
@@ -21,7 +22,7 @@ RUN python -m pip install --no-cache-dir \
       numpy==1.24.0 \
       matplotlib \
       pytz \
-      scipy
+      scipy==1.13
 
 # Ensures all following RUN commands will be executed in a bash shell and not sh
 SHELL ["/bin/bash", "-c"]
@@ -123,7 +124,8 @@ RUN ldconfig
 
 RUN useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
-    adduser user sudo && \
+    usermod -aG sudo user && \
+    echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
     echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc
