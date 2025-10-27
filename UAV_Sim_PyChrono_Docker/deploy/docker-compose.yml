@@ -21,8 +21,3 @@ services:
       - type: bind
         source: $HOME/DockerSharedFolder
         target: /home/user/DockerSharedFolder
-    deploy:
-      resources:
-        limits:
-          cpus: '16'       # Use up to 4 CPU cores
-          memory: 8G      # Use up to 8GB RAM
