@@ -17,7 +17,21 @@ cat > $HOME/DockerSharedFolder/.devcontainer/devcontainer.json << EOF
   "dockerComposeFile": "$SCRIPT_DIR/docker-compose.yml",
   "service": "uav_sim_pychrono",
   "workspaceFolder": "/home/user/DockerSharedFolder",
-  "remoteUser": "user"
+  "remoteUser": "user",
+  "customizations": {
+  "vscode": {
+    "extensions": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "ms-python.debugpy"
+    ],
+    "settings": {
+      "python.defaultInterpreterPath": "/usr/local/bin/python",
+      "editor.semanticHighlighting.enabled": true,
+      "python.languageServer": "Pylance"
+    }
+  }
+}
 }
 EOF
 
