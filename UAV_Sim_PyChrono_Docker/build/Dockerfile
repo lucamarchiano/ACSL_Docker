@@ -97,7 +97,8 @@ RUN git clone https://github.com/projectchrono/chrono . && \
           -DCMAKE_BUILD_TYPE=Release .. && \
     make -j"$(nproc)" && \
     make install && \
-    ldconfig 
+    ldconfig && \
+    wget -P /usr/local/share/chrono/data https://raw.githubusercontent.com/projectchrono/chrono/main/contrib/logo/old/logo_pychrono_alpha.png
 
 
 # Stage 6: Final runtime image, copy built artifacts

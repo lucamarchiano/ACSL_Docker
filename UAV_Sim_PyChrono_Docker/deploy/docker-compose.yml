@@ -21,3 +21,5 @@ services:
       - type: bind
         source: $HOME/DockerSharedFolder
         target: /home/user/DockerSharedFolder
+    shm_size: 1g
+    ipc: host
