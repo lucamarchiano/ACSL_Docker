@@ -118,18 +118,23 @@ COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/ /opt/chrono_ro
 # Copy PyChrono install files from chrono-builder stage (assumed install location in /usr/local)
 COPY --from=chrono-builder /usr/local /usr/local
 
-# Extend PYTHONPATH so installed PyChrono package is found at runtime
-ENV PYTHONPATH=/usr/local/share/chrono/python/:$PYTHONPATH
-
-RUN ldconfig
-
-RUN useradd -ms /bin/bash user && \
+# Refresh linkers, set time zone, add user, set colored prompt & source pychrono installation
+RUN ldconfig && \
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
+    useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
     echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc
+
+# Extend PYTHONPATH so installed PyChrono package is found at runtime
+ENV PYTHONPATH=/usr/local/share/chrono/python/:$PYTHONPATH
+
+# Set environment variable TZ 
+ENV TZ="America/New_York"
 
 USER user
 WORKDIR /home/user
