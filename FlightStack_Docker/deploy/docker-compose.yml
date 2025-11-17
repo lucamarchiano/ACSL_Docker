@@ -1,0 +1,11 @@
+services:
+  flightstack:
+    build: .
+    image: ghcr.io/lucamarchiano/flightstack:1.0
+    container_name: flightstack
+    hostname: flightstack
+    tty: true
+    stdin_open: true
+    environment:
+      # Add timezone environment variable
+      - TZ=America/New_York
