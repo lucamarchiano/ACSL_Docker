@@ -1,7 +1,12 @@
+#=================================================
 # Stage 1: Base with ROS and preliminary packages
+#=================================================
 FROM osrf/ros:humble-desktop AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/New_York
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 RUN ln -sf "$(which python3)" /usr/local/bin/python && \
     apt-get update && \
@@ -15,7 +20,13 @@ RUN ln -sf "$(which python3)" /usr/local/bin/python && \
       libbz2-dev \
       wget \
       gdb \
-      nano && \
+      nano \
+      locales
+      
+RUN locale-gen en_US en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/*
 
 RUN python -m pip install --no-cache-dir \
@@ -24,11 +35,11 @@ RUN python -m pip install --no-cache-dir \
       pytz \
       scipy==1.13
 
-# Ensures all following RUN commands will be executed in a bash shell and not sh
 SHELL ["/bin/bash", "-c"]
 
-
-# Stage 2: Install CMake 3.26 from Kitware APT repo
+#=========================================
+# Stage 2: Install CMake 3.26 from source
+#=========================================
 FROM base AS cmake-builder
 
 RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
@@ -41,8 +52,9 @@ RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
     echo -e "Package: cmake-data\nPin: version 3.26*\nPin-Priority: 1001" > /etc/apt/preferences.d/cmake-data-pin && \
     rm -rf /var/lib/apt/lists/*
 
-
+#=======================================
 # Stage 3: Build Boost 1.86 from source
+#=======================================
 FROM base AS boost-builder
 
 RUN git clone --recursive --branch boost-1.86.0 https://github.com/boostorg/boost.git /boost && \
@@ -54,8 +66,9 @@ RUN git clone --recursive --branch boost-1.86.0 https://github.com/boostorg/boos
 
 RUN ldconfig
 
-
+#==============================================
 # Stage 4: Build chrono_ros_interfaces package
+#==============================================
 FROM base AS chrono-ros-builder
 
 WORKDIR /root/chrono_ros_interfaces_build
@@ -65,7 +78,21 @@ RUN mkdir -p src && \
     colcon build
 
 
-# Stage 5: Build PyChrono (Chrono 9.0.1) from source, sourcing chrono_ros_interfaces first
+#=================================
+# Stage 5: Build px4_msgs package
+#=================================
+FROM base AS px4-msgs-builder
+
+WORKDIR /root/px4_msgs_build
+RUN mkdir -p src && \
+    git clone --depth 1 https://github.com/PX4/px4_msgs.git src/px4_msgs && \
+    source /opt/ros/humble/setup.bash && \
+    colcon build
+
+
+#=====================================================
+# Stage 6: Build PyChrono (Chrono 9.0.1) from source
+#=====================================================
 FROM base AS chrono-builder
 
 # Copy CMake binaries and data from cmake-builder
@@ -94,14 +121,16 @@ RUN git clone https://github.com/projectchrono/chrono . && \
     cmake -DCH_ENABLE_MODULE_IRRLICHT=ON \
           -DCH_ENABLE_MODULE_PYTHON=ON \
           -DCH_ENABLE_MODULE_ROS=ON \
+          -DCH_ENABLE_MODULE_VEHICLE=ON \
           -DCMAKE_BUILD_TYPE=Release .. && \
     make -j"$(nproc)" && \
     make install && \
     ldconfig && \
     wget -P /usr/local/share/chrono/data https://raw.githubusercontent.com/projectchrono/chrono/main/contrib/logo/old/logo_pychrono_alpha.png
 
-
-# Stage 6: Final runtime image, copy built artifacts
+#====================================================
+# Stage 7: Final runtime image, copy built artifacts
+#====================================================
 FROM base
 
 # Copy CMake binaries and share files from cmake-builder stage
@@ -115,28 +144,28 @@ COPY --from=boost-builder /usr/local/lib /usr/local/lib
 # Copy chrono_ros_interfaces install from chrono-ros-builder stage
 COPY --from=chrono-ros-builder /root/chrono_ros_interfaces_build/ /opt/chrono_ros_interfaces_build/
 
+# Copy px4_msgs install from px4-msgs-builder stage
+COPY --from=px4-msgs-builder /root/px4_msgs_build/ /opt/px4_msgs_build/
+
 # Copy PyChrono install files from chrono-builder stage (assumed install location in /usr/local)
 COPY --from=chrono-builder /usr/local /usr/local
 
 # Refresh linkers, set time zone, add user, set colored prompt & source pychrono installation
 RUN ldconfig && \
-    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata && \
     useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
     echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
-    echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc
+    echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc && \
+    echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
 
 # Extend PYTHONPATH so installed PyChrono package is found at runtime
 ENV PYTHONPATH=/usr/local/share/chrono/python/:$PYTHONPATH
 
-# Set environment variable TZ 
-ENV TZ="America/New_York"
-
 USER user
 WORKDIR /home/user
+
 CMD ["bash", "-l"]
-LABEL org.opencontainers.image.source https://github.com/lucamarchiano/ACSL_Docker
+LABEL org.opencontainers.image.source="https://github.com/lucamarchiano/ACSL_Docker"

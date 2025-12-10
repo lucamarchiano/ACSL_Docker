@@ -8,7 +8,7 @@ ENV TZ=America/New_York
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
-RUN apt-get update && sudo apt-get upgrade && \
+RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y \
     # Common
     git nano libasio-dev usbutils linux-firmware dkms software-properties-common lsb-release build-essential make g++ gcc locales tzdata\
@@ -20,7 +20,13 @@ RUN apt-get update && sudo apt-get upgrade && \
     python3-dev autotools-dev libicu-dev libbz2-dev \
     # VIO prerequirites
     libssl-dev libusb-1.0-0-dev libudev-dev \
-    libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev && \
+    libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev \
+    # ROS 2 build tools
+    python3-colcon-common-extensions \
+    python3-colcon-core \
+    python3-colcon-ros \
+    python3-pip \
+    python3-rosdep && \
     rm -rf /var/lib/apt/lists/*
 
 RUN locale-gen en_US en_US.UTF-8 && \
@@ -96,6 +102,16 @@ RUN mkdir -p /etc/udev/rules.d/ && \
     make -j$(nproc) && \
     make install
 
+#=================================
+# Stage 6: Build px4_msgs package
+#=================================
+FROM base AS px4-msgs-builder
+
+WORKDIR /root/px4_msgs_build
+RUN mkdir -p src && \
+    git clone --depth 1 https://github.com/PX4/px4_msgs.git src/px4_msgs && \
+    source /opt/ros/humble/setup.bash && \
+    colcon build
 
 #=======================
 # Stage 6: Final build
@@ -119,13 +135,17 @@ COPY --from=boost-builder /usr/local/lib /usr/local/lib
 COPY --from=vio-builder /usr/local/lib /usr/local/lib
 COPY --from=vio-builder /usr/local/include /usr/local/include
 
+# Copy px4_msgs install from px4-msgs-builder stage
+COPY --from=px4-msgs-builder /root/px4_msgs_build/ /opt/px4_msgs_build/
+
 RUN ldconfig && \
     useradd -ms /bin/bash user && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
     echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \    
-    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc
+    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
+    echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
 
 USER user
 WORKDIR /home/user

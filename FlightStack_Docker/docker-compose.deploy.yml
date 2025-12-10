@@ -1,0 +1,29 @@
+services:
+  flightstack:
+    image: ghcr.io/lucamarchiano/flightstack:1.0
+    entrypoint: /entrypoint.sh
+    working_dir: /home/user/FlightstackSharedFolder
+    container_name: flightstack
+    hostname: flightstack
+    tty: true
+    stdin_open: true
+    environment:
+      # Add timezone environment variable
+      - TZ=America/New_York
+      # Add ROS environmental variables
+      - ROS_DOMAIN_ID=42
+      - ROS_LOCALHOST_ONLY=0
+    volumes:
+      # Mount entrypoint script
+      - type: bind
+        source: ./entrypoint.sh     
+        target: /entrypoint.sh       
+        read_only: true
+      # Mount FlightstackSharedFolder folder
+      - type: bind
+        source: $HOME/FlightstackSharedFolder
+        target: /home/user/FlightstackSharedFolder
+
+networks:
+  default:
+    name: rosnet

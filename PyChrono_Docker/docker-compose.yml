@@ -1,0 +1,4 @@
+services:
+  pychrono:
+    build: .
+    image: ghcr.io/lucamarchiano/pychrono:1.0
