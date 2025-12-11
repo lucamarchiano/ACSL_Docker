@@ -1,7 +1,8 @@
 services:
   pychrono:
-    image: ghcr.io/lucamarchiano/pychrono:1.0
+    image: ghcr.io/lucamarchiano/pychrono:2.0
     entrypoint: /entrypoint.sh
+    command: bash
     working_dir: /home/user/PyChronoSharedFolder
     container_name: pychrono
     hostname: pychrono

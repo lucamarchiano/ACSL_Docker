@@ -35,7 +35,7 @@ cat > $HOME/PyChronoSharedFolder/.devcontainer/devcontainer.json << EOF
       "python.defaultInterpreterPath": "/usr/local/bin/python",
       "editor.semanticHighlighting.enabled": true,
       "python.languageServer": "Pylance",
-      "ros.distro": "humble",
+      "ros.distro": "jazzy",
       "files.associations": {
         "*.launch": "xml",
         "*.xacro": "xml",
@@ -50,5 +50,9 @@ cat > $HOME/PyChronoSharedFolder/.devcontainer/devcontainer.json << EOF
 EOF
 
 
-echo -e "\nStarting container 'pychrono' with PyChrono 9.0.1 and ROS2 Humble\n"
-docker compose -f docker-compose.deploy.yml run pychrono bash
+echo -e "\nStarting container 'pychrono' with PyChrono 9.0.1 and ROS2 jazzy\n"
+# docker compose -f docker-compose.deploy.yml run pychrono bash
+
+#TODO: use compose up and exec files
+docker compose -f docker-compose.deploy.yml up -d
+docker compose -f docker-compose.deploy.yml exec pychrono bash

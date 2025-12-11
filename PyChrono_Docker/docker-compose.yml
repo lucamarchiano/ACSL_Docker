@@ -1,4 +1,4 @@
 services:
   pychrono:
     build: .
-    image: ghcr.io/lucamarchiano/pychrono:1.0
+    image: ghcr.io/lucamarchiano/pychrono:2.0
