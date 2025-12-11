@@ -160,14 +160,10 @@ RUN ldconfig && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Extend PYTHONPATH so installed PyChrono package is found at runtime
 ENV PYTHONPATH=/usr/local/share/chrono/python/:$PYTHONPATH
 
 USER user
 WORKDIR /home/user
-ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash", "-l"]
 LABEL org.opencontainers.image.source="https://github.com/lucamarchiano/ACSL_Docker"
