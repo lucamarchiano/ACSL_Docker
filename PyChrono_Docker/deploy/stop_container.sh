@@ -9,4 +9,4 @@ docker compose -f "$SCRIPT_DIR/docker-compose.deploy.yml" down
 # Reset X server permissions to restrict access from local Docker containers
 xhost -local:docker
 
-echo -e "\n'uav_sim_pychrono' container stopped and environment reset."
+echo -e "\n'pychrono' container stopped and environment reset."

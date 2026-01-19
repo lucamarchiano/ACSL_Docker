@@ -1,0 +1,4 @@
+services:
+  flightstack:
+    build: .
+    image: ghcr.io/lucamarchiano/flightstack:2.0

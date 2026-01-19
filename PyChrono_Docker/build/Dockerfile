@@ -30,10 +30,6 @@ RUN locale-gen en_US en_US.UTF-8 && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/*
 
-# RUN python -m pip install --no-cache-dir \
-
-#       scipy==1.13
-
 SHELL ["/bin/bash", "-c"]
 
 #=========================================
@@ -75,7 +71,6 @@ RUN mkdir -p src && \
     git clone https://github.com/projectchrono/chrono_ros_interfaces src/chrono_ros_interfaces && \
     source /opt/ros/jazzy/setup.bash && \
     colcon build
-
 
 #=================================
 # Stage 5: Build px4_msgs package
@@ -155,7 +150,6 @@ RUN ldconfig && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
-    echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
     echo "source /opt/ros/jazzy/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
