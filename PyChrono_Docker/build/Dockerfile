@@ -1,39 +1,36 @@
 #=================================================
 # Stage 1: Base with ROS and preliminary packages
 #=================================================
-FROM osrf/ros:humble-desktop AS base
+FROM osrf/ros:jazzy-desktop-noble AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/New_York
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
+RUN userdel -r ubuntu 2>/dev/null || true && \
+    groupdel ubuntu 2>/dev/null || true
+
 RUN ln -sf "$(which python3)" /usr/local/bin/python && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       swig \
       libirrlicht-dev \
-      libgl1-mesa-glx \
       x11-xserver-utils \
       x11-apps \
       python3-pip \
-      libbz2-dev \
       wget \
       gdb \
       nano \
-      locales
+      locales \
+      python3-deap && \
+    pip install -U pymoo --break-system-packages
       
 RUN locale-gen en_US en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/*
-
-RUN python -m pip install --no-cache-dir \
-      numpy==1.24.0 \
-      matplotlib \
-      pytz \
-      scipy==1.13
 
 SHELL ["/bin/bash", "-c"]
 
@@ -47,7 +44,7 @@ RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
     mv kitware-archive-latest.asc.gpg /usr/share/keyrings/kitware-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main" > /etc/apt/sources.list.d/kitware.list && \
     apt-get update && \
-    apt-get install -y cmake=3.26.* cmake-data=3.26.* && \
+    apt-get install -y --allow-downgrades cmake=3.26.* cmake-data=3.26.* && \
     echo -e "Package: cmake\nPin: version 3.26*\nPin-Priority: 1001" > /etc/apt/preferences.d/cmake-pin && \
     echo -e "Package: cmake-data\nPin: version 3.26*\nPin-Priority: 1001" > /etc/apt/preferences.d/cmake-data-pin && \
     rm -rf /var/lib/apt/lists/*
@@ -74,9 +71,8 @@ FROM base AS chrono-ros-builder
 WORKDIR /root/chrono_ros_interfaces_build
 RUN mkdir -p src && \
     git clone https://github.com/projectchrono/chrono_ros_interfaces src/chrono_ros_interfaces && \
-    source /opt/ros/humble/setup.bash && \
+    source /opt/ros/jazzy/setup.bash && \
     colcon build
-
 
 #=================================
 # Stage 5: Build px4_msgs package
@@ -86,7 +82,7 @@ FROM base AS px4-msgs-builder
 WORKDIR /root/px4_msgs_build
 RUN mkdir -p src && \
     git clone --depth 1 https://github.com/PX4/px4_msgs.git src/px4_msgs && \
-    source /opt/ros/humble/setup.bash && \
+    source /opt/ros/jazzy/setup.bash && \
     colcon build
 
 
@@ -116,7 +112,7 @@ ENV PYTHONPATH=/root/chrono_build/build/bin:$PYTHONPATH
 RUN git clone https://github.com/projectchrono/chrono . && \
     mkdir -p build && \
     cd build && \
-    source /opt/ros/humble/setup.bash && \
+    source /opt/ros/jazzy/setup.bash && \
     source /root/chrono_ros_interfaces_build/install/local_setup.bash && \
     cmake -DCH_ENABLE_MODULE_IRRLICHT=ON \
           -DCH_ENABLE_MODULE_PYTHON=ON \
@@ -156,8 +152,7 @@ RUN ldconfig && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
-    echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \
-    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
+    echo "source /opt/ros/jazzy/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/chrono_ros_interfaces_build/install/local_setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
 
@@ -166,6 +161,5 @@ ENV PYTHONPATH=/usr/local/share/chrono/python/:$PYTHONPATH
 
 USER user
 WORKDIR /home/user
-
 CMD ["bash", "-l"]
 LABEL org.opencontainers.image.source="https://github.com/lucamarchiano/ACSL_Docker"

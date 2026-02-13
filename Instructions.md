@@ -52,3 +52,18 @@ cd PyChrono_Docker
 ```
 >[!NOTE] 
 To use the docker container, add files to the corresponding SharedFolder in order to let both the container and the host access those files.
+
+## 4. How to manage containers image on ghcr.io
+To manage container images to ghcr.io a PAT (Personal Access Token) is required.
+Instructions on how to proceed can be found [here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry)
+
+Create PAT on GitHub personal page under Settings, Developer Settings, Personal Access Tokens
+Select Write Packages and Delete Packages permissions
+Copy the PAT (shown only once!)
+Go to terminal and run
+
+```bash
+docker login ghcr.io
+```
+Use github username and the PAT as password.
+

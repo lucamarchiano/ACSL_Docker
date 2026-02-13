@@ -1,12 +1,14 @@
 #======================================
 # Stage 1: Setup and install packages
 #======================================
-FROM ros:humble-ros-base-jammy AS base
-
+FROM ros:jazzy-ros-base-noble AS base
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/New_York
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
+
+RUN userdel -r ubuntu 2>/dev/null || true && \
+    groupdel ubuntu 2>/dev/null || true
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y \
@@ -47,10 +49,12 @@ RUN wget https://apt.kitware.com/keys/kitware-archive-latest.asc && \
     mv kitware-archive-latest.asc.gpg /usr/share/keyrings/kitware-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main" > /etc/apt/sources.list.d/kitware.list && \
     apt-get update && \
-    apt-get install -y cmake=3.26.* cmake-data=3.26.* && \
+    apt-get install -y --allow-downgrades cmake=3.26.* cmake-data=3.26.* && \
     echo -e "Package: cmake\nPin: version 3.26*\nPin-Priority: 1001" > /etc/apt/preferences.d/cmake-pin && \
     echo -e "Package: cmake-data\nPin: version 3.26*\nPin-Priority: 1001" > /etc/apt/preferences.d/cmake-data-pin && \
     rm -rf /var/lib/apt/lists/*
+
+    
 
 #=========================================
 # Stage 3: Install Micro-XRCE-DDS-Agent
@@ -110,7 +114,7 @@ FROM base AS px4-msgs-builder
 WORKDIR /root/px4_msgs_build
 RUN mkdir -p src && \
     git clone --depth 1 https://github.com/PX4/px4_msgs.git src/px4_msgs && \
-    source /opt/ros/humble/setup.bash && \
+    source /opt/ros/jazzy/setup.bash && \
     colcon build
 
 #=======================
@@ -143,8 +147,7 @@ RUN ldconfig && \
     echo "user:user" | chpasswd && \
     usermod -aG sudo user && \
     echo "user ALL=(ALL) PASSWD:ALL" >> /etc/sudoers && \
-    echo "export PS1='\[\033[1;33m\]\u@\h\[\033[0m\]:\[\033[1;34m\]\w\[\033[0m\]\$ '" >> /home/user/.bashrc && \    
-    echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc && \
+    echo "source /opt/ros/jazzy/setup.bash" >> /home/user/.bashrc && \
     echo "source /opt/px4_msgs_build/install/local_setup.bash" >> /home/user/.bashrc
 
 USER user

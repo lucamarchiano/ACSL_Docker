@@ -1,7 +1,8 @@
 services:
   pychrono:
-    image: ghcr.io/lucamarchiano/pychrono:1.0
+    image: ghcr.io/lucamarchiano/pychrono:2.0
     entrypoint: /entrypoint.sh
+    command: bash
     working_dir: /home/user/PyChronoSharedFolder
     container_name: pychrono
     hostname: pychrono
@@ -17,7 +18,6 @@ services:
       - GID=${GID}
       # Add ROS environmental variables
       - ROS_DOMAIN_ID=42
-      - ROS_LOCALHOST_ONLY=0
     user: "${UID}:${GID}"
     volumes:
       # Mount entrypoint script
