@@ -64,4 +64,4 @@ EOF
 echo -e "\nStarting container '$CONTAINER_SERVICE_NAME' with PyChrono 9.0.1 and ROS2 Jazzy\n"
 
 docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" up -d
-docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" exec "$CONTAINER_SERVICE_NAME" bash
+docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" exec "$CONTAINER_SERVICE_NAME" /entrypoint.sh bash

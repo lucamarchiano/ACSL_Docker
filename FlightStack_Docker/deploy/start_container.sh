@@ -71,4 +71,4 @@ else
   echo "   cd $ROS_WS_NAME && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
 fi
 
-docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" exec "$CONTAINER_SERVICE_NAME" bash
+docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" exec "$CONTAINER_SERVICE_NAME" /entrypoint.sh bash
