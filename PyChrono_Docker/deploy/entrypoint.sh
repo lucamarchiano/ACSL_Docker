@@ -46,22 +46,4 @@ EOF
 
 source /home/user/.bashrc
 
-#========================================
-# Add cleanup instructions
-#========================================
-cat >> /home/user/.bashrc << 'EOF'
-cleanup() {
-  echo ""
-  echo "================================================"
-  echo -e "container 'pychrono' closed\n"
-  echo "To perform cleanup run stop_container.sh"
-  echo "================================================"
-
-}
-
-trap cleanup EXIT
-EOF
-
-source /home/user/.bashrc
-
 exec "$@"

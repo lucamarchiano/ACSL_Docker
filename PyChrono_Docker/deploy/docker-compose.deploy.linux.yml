@@ -1,0 +1,18 @@
+services:
+  pychrono:
+    environment:
+      # Forward X11 display to container
+      - DISPLAY=${DISPLAY}
+      # Forward host user id and group id to manage folder ownership
+      - UID=${UID}
+      - GID=${GID}
+    user: "${UID}:${GID}"
+    volumes: 
+      # Mount X11 socket for GUI applications
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+      # Mount PyChronoSharedFolder folder 
+      - type: bind
+        source: $HOME/PyChronoSharedFolder
+        target: /home/user/PyChronoSharedFolder

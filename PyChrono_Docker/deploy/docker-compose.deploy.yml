@@ -11,27 +11,13 @@ services:
     environment:
       # Add timezone environment variable
       - TZ=America/New_York
-      # Forward X11 display to container
-      - DISPLAY=${DISPLAY}
-      # Forward host user id and group id to manage folder ownership
-      - UID=${UID}
-      - GID=${GID}
       # Add ROS environmental variables
       - ROS_DOMAIN_ID=42
-    user: "${UID}:${GID}"
     volumes:
       # Mount entrypoint script
       - type: bind
         source: ./entrypoint.sh     
         target: /entrypoint.sh 
-      # Mount X11 socket for GUI applications
-      - type: bind
-        source: /tmp/.X11-unix
-        target: /tmp/.X11-unix
-      # Mount PyChronoSharedFolder folder (/host/path:/container/path)
-      - type: bind
-        source: $HOME/PyChronoSharedFolder
-        target: /home/user/PyChronoSharedFolder
 
 networks:
   default:
