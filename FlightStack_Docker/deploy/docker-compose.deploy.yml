@@ -17,12 +17,7 @@ services:
       # Mount entrypoint script
       - type: bind
         source: ./entrypoint.sh     
-        target: /entrypoint.sh       
-        read_only: true
-      # Mount FlightstackSharedFolder folder
-      - type: bind
-        source: $HOME/FlightstackSharedFolder
-        target: /home/user/FlightstackSharedFolder
+        target: /entrypoint.sh      
 
 networks:
   default:

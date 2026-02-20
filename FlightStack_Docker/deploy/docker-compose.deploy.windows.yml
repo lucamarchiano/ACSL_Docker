@@ -1,0 +1,7 @@
+services:
+  flightstack:
+    volumes:
+      # Mount FlightstackSharedFolder folder
+      - type: bind
+        source: $HOST_SHARED_DIR
+        target: /home/user/FlightstackSharedFolder
