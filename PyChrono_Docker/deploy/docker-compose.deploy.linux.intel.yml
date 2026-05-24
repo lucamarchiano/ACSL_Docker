@@ -1,0 +1,6 @@
+services:
+  pychrono:
+    # Share Intel/AMD graphics hardware directly with the container
+    devices:
+      - /dev/dri:/dev/dri
+

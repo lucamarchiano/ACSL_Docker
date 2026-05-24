@@ -4,12 +4,17 @@
 set "HOST_SHARED_DIR=%USERPROFILE%\Documents\PyChronoSharedFolder"
 set "CONTAINER_SHARED_DIR=/home/user/PyChronoSharedFolder"
 set "DEVCONTAINER_DIR=%HOST_SHARED_DIR%\.devcontainer"
-set "DOCKER_COMPOSE_FILE=docker-compose.deploy.yml"
-set "DOCKER_COMPOSE_FILE_OVERRIDE=docker-compose.deploy.windows.yml"
+
+set "DOCKER_COMPOSE_BASE=docker-compose.deploy.yml"
+set "DOCKER_COMPOSE_WINDOWS=docker-compose.deploy.windows.yml"
+
 set "DEVCONTAINER_NAME=pychrono"
 set "CONTAINER_SERVICE_NAME=pychrono"
 set "CONTAINER_USER=user"
 set "SCRIPT_DIR=%~dp0"
+
+:: Ensure the script runs out of its own directory so paths map perfectly
+cd /d "%SCRIPT_DIR%"
 
 :: Create the shared directory if it doesn't exist
 if not exist "%HOST_SHARED_DIR%" (
@@ -26,8 +31,8 @@ if not exist "%DEVCONTAINER_DIR%" mkdir "%DEVCONTAINER_DIR%"
 echo {
 echo  "name": "%DEVCONTAINER_NAME%",
 echo   "dockerComposeFile": [
-echo     "%SCRIPT_DIR:\=/%%DOCKER_COMPOSE_FILE:\=/%",
-echo     "%SCRIPT_DIR:\=/%%DOCKER_COMPOSE_FILE_OVERRIDE:\=/%"
+echo     "../%DOCKER_COMPOSE_BASE%",
+echo     "../%DOCKER_COMPOSE_WINDOWS%"
 echo   ],
 echo  "service": "%CONTAINER_SERVICE_NAME%",
 echo  "workspaceFolder": "%CONTAINER_SHARED_DIR%",
@@ -60,23 +65,11 @@ echo  }
 echo }
 ) > "%DEVCONTAINER_DIR%\devcontainer.json"
 
-:: Install VcXsrv if not already installed
-winget install --id=marha.VcXsrv --exact --accept-package-agreements --accept-source-agreements --silent
-
-:: Run VcXsrv with the appropriate settings
-tasklist /fi "imagename eq vcxsrv.exe" 2>NUL | find /i "vcxsrv.exe" >NUL
-if "%ERRORLEVEL%"=="0" (
-    echo VcXsrv already running.
-) else (
-    echo Starting VcXsrv...
-    start "" "C:\Program Files\VcXsrv\vcxsrv.exe" :0 -multiwindow -clipboard -wgl -ac
-)
-
 :: Start the container using Docker Compose
-echo Starting the container %CONTAONER_SERIVCE_NAME% with PyChrono 9.0.1 and ROS2 Jazzy...
+echo Starting the container %CONTAINER_SERVICE_NAME% with PyChrono 9.0.1 and ROS2 Jazzy...
 
-docker compose -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE%" -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE_OVERRIDE%" up -d
-docker compose -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE%" -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE_OVERRIDE%" exec "%CONTAINER_SERVICE_NAME%" /entrypoint.sh bash
+docker compose -f "%DOCKER_COMPOSE_BASE%" -f "%DOCKER_COMPOSE_WINDOWS%" up -d
+docker compose -f "%DOCKER_COMPOSE_BASE%" -f "%DOCKER_COMPOSE_WINDOWS%" exec "%CONTAINER_SERVICE_NAME%" bash
 
 :: Cleanup configuration
 set "EXIT_CODE=%ERRORLEVEL%"
@@ -87,7 +80,7 @@ choice /C YN /N
 echo.
 if %ERRORLEVEL%==1 (
     echo Killing "%CONTAINER_SERVICE_NAME%" container...
-    docker compose -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE%" -f "%SCRIPT_DIR%\%DOCKER_COMPOSE_FILE_OVERRIDE%" down
+    docker compose -f "%DOCKER_COMPOSE_BASE%" -f "%DOCKER_COMPOSE_WINDOWS%" down
     echo Done. Container "%CONTAINER_SERVICE_NAME%" killed.
 ) else (
     echo Container "%CONTAINER_SERVICE_NAME%" left running.

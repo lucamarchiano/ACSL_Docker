@@ -1,10 +1,19 @@
 services:
   pychrono:
     environment:
-      # Forward display to container
-      - DISPLAY=host.docker.internal:0
+      # Direct native display parameters mapping to WSLg
+      - DISPLAY=:0
+      - WAYLAND_DISPLAY=wayland-0
+      - XDG_RUNTIME_DIR=/mnt/wslg/runtime-dir
+      - PULSE_SERVER=/mnt/wslg/PulseServer
     volumes: 
-      # Mount PyChronoSharedFolder folder 
+      # Passthrough the high-performance display graphic sockets
       - type: bind
-        source: $HOST_SHARED_DIR
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+      - type: bind
+        source: /mnt/wslg
+        target: /mnt/wslg
+      - type: bind
+        source: ${HOST_SHARED_DIR}
         target: /home/user/PyChronoSharedFolder

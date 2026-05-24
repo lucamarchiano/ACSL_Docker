@@ -4,9 +4,9 @@ services:
       # Forward X11 display to container
       - DISPLAY=${DISPLAY}
       # Forward host user id and group id to manage folder ownership
-      - UID=${UID}
-      - GID=${GID}
-    user: "${UID}:${GID}"
+      - UID=${HOST_UID}
+      - GID=${HOST_GID}
+    user: "${HOST_UID}:${HOST_GID}"
     volumes: 
       # Mount X11 socket for GUI applications
       - type: bind
@@ -14,5 +14,5 @@ services:
         target: /tmp/.X11-unix
       # Mount PyChronoSharedFolder folder 
       - type: bind
-        source: $HOME/PyChronoSharedFolder
+        source: ${HOST_SHARED_DIR}
         target: /home/user/PyChronoSharedFolder

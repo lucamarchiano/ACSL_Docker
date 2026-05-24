@@ -5,12 +5,27 @@ set -euo pipefail
 HOST_SHARED_DIR="$HOME/PyChronoSharedFolder"
 CONTAINER_SHARED_DIR="/home/user/PyChronoSharedFolder"
 DEVCONTAINER_DIR="$HOST_SHARED_DIR/.devcontainer"
-DOCKER_COMPOSE_FILE="docker-compose.deploy.yml"
-DOCKER_COMPOSE_FILE_OVERRIDE="docker-compose.deploy.linux.yml"
+
+DOCKER_COMPOSE_BASE="docker-compose.deploy.yml"
+DOCKER_COMPOSE_LINUX="docker-compose.deploy.linux.yml"
+
 DEVCONTAINER_NAME="pychrono"
 CONTAINER_SERVICE_NAME="pychrono"
 CONTAINER_USER="user"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+export HOST_SHARED_DIR
+export HOST_UID="$(id -u)"
+export HOST_GID="$(id -g)"
+
+# Dynamic GPU Hardware Detection
+if command -v nvidia-smi &> /dev/null && nvidia-smi &> /dev/null; then
+    echo "✨ NVIDIA GPU detected. Using NVIDIA proprietary container layer."
+    DOCKER_COMPOSE_GPU_OVERRIDE="docker-compose.deploy.linux.nvidia.yml"
+else
+    echo "💻 Intel/AMD Graphics detected. Using open-source DRI runtime layer."
+    DOCKER_COMPOSE_GPU_OVERRIDE="docker-compose.deploy.linux.intel.yml"
+fi
 
 # Create the shared directory if it doesn't exist
 if [ ! -d "${HOST_SHARED_DIR}" ]; then
@@ -26,7 +41,11 @@ mkdir -p "$DEVCONTAINER_DIR"
 cat > "$DEVCONTAINER_DIR/devcontainer.json" << EOF
 {
   "name": "$DEVCONTAINER_NAME",
-  "dockerComposeFile": "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE",
+  "dockerComposeFile": [
+    "$SCRIPT_DIR/$DOCKER_COMPOSE_BASE",
+    "$SCRIPT_DIR/$DOCKER_COMPOSE_LINUX",
+    "$SCRIPT_DIR/$DOCKER_COMPOSE_GPU_OVERRIDE"
+  ],
   "service": "$CONTAINER_SERVICE_NAME",
   "workspaceFolder": "$CONTAINER_SHARED_DIR",
   "remoteUser": "$CONTAINER_USER",
@@ -58,18 +77,14 @@ cat > "$DEVCONTAINER_DIR/devcontainer.json" << EOF
 }
 EOF
 
-# Export host user and group id
-echo "UID=$(id -u)" > .env
-echo "GID=$(id -g)" >> .env
-
 # Allow local containers to connect to X server
 xhost +local:docker
 
 # Start the container using Docker Compose
 echo -e "\nStarting container '$CONTAINER_SERVICE_NAME' with PyChrono 9.0.1 and ROS2 Jazzy\n"
 
-docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE_OVERRIDE" up -d
-docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE_OVERRIDE" exec "$CONTAINER_SERVICE_NAME" /entrypoint.sh bash
+docker compose -f "$DOCKER_COMPOSE_BASE" -f "$DOCKER_COMPOSE_LINUX" -f "$DOCKER_COMPOSE_GPU_OVERRIDE" up -d
+docker compose -f "$DOCKER_COMPOSE_BASE" -f "$DOCKER_COMPOSE_LINUX" -f "$DOCKER_COMPOSE_GPU_OVERRIDE" exec "$CONTAINER_SERVICE_NAME" bash
 
 # Cleanup configuration
 EXIT_CODE=$?
@@ -79,7 +94,7 @@ read -p "Kill it now with docker compose down? (y/n, default: n): " -n 1 -r choi
 echo ""
 if [[ $choice =~ ^[Yy]$ ]]; then
   echo "Killing '$CONTAINER_SERVICE_NAME' container..."
-  docker compose -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE" -f "$SCRIPT_DIR/$DOCKER_COMPOSE_FILE_OVERRIDE" down
+  docker compose -f "$DOCKER_COMPOSE_BASE" -f "$DOCKER_COMPOSE_LINUX" -f "$DOCKER_COMPOSE_GPU_OVERRIDE" down
   xhost -local:docker
   echo "Done. Container '$CONTAINER_SERVICE_NAME' killed."
 else
